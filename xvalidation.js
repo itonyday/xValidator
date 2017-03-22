@@ -45,7 +45,7 @@
  * 
  *      faxNo:{
  *          required:true,
- *          format:/\d{3,4}-\d{7,8}/
+ *          regularExpr:/\d{3,4}-\d{7,8}/
  *      }
  * 
  *      // person[sex] is a group of radion button
@@ -67,29 +67,65 @@
  * 
  */
 (function ($) {
+    function notInputed(value) {
+        return (value === null || value === undefined || value.length === 0);
+    }
+
     var rules = {
         "required": {
             msg: "the field is required.",
             test: function () {
-                if (this === null || this === undefined || this.length === 0) {
-                    return false;
-                }
-
-                return true;
+                return !notInputed(this);
             }
         },
 
         "number": {
             msg: "the field expects a number.",
             test: function () {
+                if (notInputed(this)) {
+                    return true;
+                }
+
                 var expr = /^\-?\d+(\.\d+)?$/;
                 return expr.test(this);
             }
         },
 
+        "email": {
+            msg: "the field expects an email address.",
+            test: function () {
+                if (notInputed(this)) {
+                    return true;
+                }
+
+                var expr = /^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/;
+                return expr.test(this);
+            }
+        },
+
+        "letter": {
+            msg: "the field expects some letter.",
+            test: function () {
+                if (notInputed(this)) {
+                    return true;
+                }
+
+                var expr = /[a-zA-Z]/;
+                return expr.test(this);
+            }
+        },
+
+        "Chinese.mobileNo": {},
+        "Chinese.IDNo": {},
+        "Chinese.phoneNo": {},
+
         "max": {
             msg: "the inputed number should less or equals to $value.",
             test: function ($value) {
+                if (notInputed(this)) {
+                    return true;
+                }
+
                 return parseFloat(this) <= $value;
             }
         },
@@ -97,6 +133,10 @@
         "max_out": {
             msg: "the inputed number should less to $value.",
             test: function ($value) {
+                if (notInputed(this)) {
+                    return true;
+                }
+
                 return parseFloat(this) < $value;
             }
         },
@@ -104,6 +144,10 @@
         "min": {
             msg: "the inputed number should greater or equals to $value.",
             test: function ($value) {
+                if (notInputed(this)) {
+                    return true;
+                }
+
                 return parseFloat(this) >= $value;
             }
         },
@@ -111,7 +155,44 @@
         "min_out": {
             msg: "the inputed number should greater to $value.",
             test: function ($value) {
+                if (notInputed(this)) {
+                    return true;
+                }
+
                 return parseFloat(this) > $value;
+            }
+        },
+
+        "maxlength": {
+            msg: "inputed text should not more than $value character(s).",
+            test: function ($value) {
+                if (notInputed(this)) {
+                    return true;
+                }
+
+                return this.length < $value;
+            }
+        },
+
+        "minlength": {
+            msg: "inputed text should not less than $value character(s).",
+            test: function ($value) {
+                if (notInputed(this)) {
+                    return true;
+                }
+
+                return this.length > $value;
+            }
+        },
+
+        "regularExpr": {
+            msg: "inputed text should match to a regular express $value.",
+            test: function ($value) {
+                if (notInputed(this)) {
+                    return true;
+                }
+
+                return $value.test(this);
             }
         },
     };
