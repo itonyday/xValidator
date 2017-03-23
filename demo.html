@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>xValidation Demo</title>
+    <script src="jquery-3.2.0.min.js"></script>
+    <script src="xvalidation.js"></script>
+    <style>
+        span.title {
+            display: inline-block;
+            width: 100px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="box1">
+        <h2>- full demo -</h2>
+        <p>
+            <span class="title">name:</span> <input type="text" name="name">
+        </p>
+        <p>
+            <span class="title">age:</span> <input type="text" name="age">
+        </p>
+        <p>
+            <span class="title">password:</span> <input type="password" name="password">
+        </p>
+        <p>
+            <span class="title">content:</span> <textarea name="content" id="" cols="30" rows="5"></textarea>
+        </p>
+
+        <p>
+            <span class="title">email:</span> <input type="text" name="email">
+        </p>
+        <p>
+            <span class="title">phone no:</span> <input type="text" name="phoneNo">
+        </p>
+        <p>
+            <span class="title">fax no:</span> <input type="text" name="faxNo">
+        </p>
+        <p>
+            <span class="title">sex:</span>
+            <label for=""> <input type="radio" name="person[sex]" value="0">female</label>
+            <label for=""> <input type="radio" name="person[sex]" value="1">male</label>
+        </p>
+        <p>
+            <span class="title">city:</span>
+            <select name="city" id="">
+                <option value="">select...</option>
+                <option value="guangzhou">guangzhou</option>
+                <option value="shenzhen">shenzhen</option>
+                <option value="shanghai">shanghai</option>
+            </select>
+        </p>
+        <p><span class="title">tickets:</span>
+            <select name="tickets" id="" multiple>
+                <option value="trip-usa">trip to usa</option>
+                <option value="trip-russia">trip to russia</option>
+                <option value="trip-south-africa">trip to south africa</option>
+            </select>
+        </p>
+        <p>
+            <span class="title">certification:</span>
+            <input type="checkbox" name="certification" value="GAT">GAT
+            <input type="checkbox" name="certification" value="TUS">TUS
+            <input type="checkbox" name="certification" value="ABC">ABC
+            <input type="checkbox" name="certification" value="DAA">DAA
+        </p>
+        <p>
+            <span class="title">hobby:</span>
+            <input type="checkbox" name="hobby" value="football">football
+            <input type="checkbox" name="hobby" value="basketball">basketball
+            <input type="checkbox" name="hobby" value="swim">swim
+            <input type="checkbox" name="hobby" value="hiking">hiking
+            <input type="checkbox" name="hobby" value="riding">riding
+        </p>
+    </div>
+
+    <script>
+
+    </script>
+</body>
+
+</html>

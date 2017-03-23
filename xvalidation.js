@@ -45,7 +45,7 @@
  * 
  *      faxNo:{
  *          required:true,
- *          regularExpr:/\d{3,4}-\d{7,8}/
+ *          regex:/\d{3,4}-\d{7,8}/
  *      }
  * 
  *      // person[sex] is a group of radion button
@@ -58,7 +58,10 @@
  *          custom:function(){
  *              // 随便假设一下，年龄50岁以上的，不能选择 football
  *              if(this.age > 50 && this.hobby.indexOf("football") !== -1){
- *                  return false;
+ *                  return {
+ *                      valid:false,
+ *                      msg:"老年人，不要从事激烈运动的好~"
+ *                  };
  *              }
  *              return true;
  *          }
@@ -185,7 +188,7 @@
             }
         },
 
-        "regularExpr": {
+        "regex": {
             msg: "inputed text should match to a regular express $value.",
             test: function ($value) {
                 if (notInputed(this)) {
@@ -197,18 +200,52 @@
         },
     };
 
+    function findNode($form, name) {
+        return $form.find("[name='" + name + "']");
+    }
+
+    function constructRules($form, options) {
+        for (var key in options) {
+            var $element = findNode($form, key);
+            if ($element.length == 0) {
+                throw new Error("cannot find html element '" + key + "'.");
+            }
+
+            
+        }
+    }
+
     var methods = {
         init: function (options) {
+            console.log("init");
+            console.log(this);
 
+            //var data = this.data("xValidator");
+            constructRules(this, options);
+            return console.log(options);
+        },
+        setData: function () {
+            this.data("xValidator", { name: "tonyday" });
         },
         valid: function () {
-
+            console.log("valid");
+            console.log(this);
         }
     };
 
     $.fn.validator = function (method) {
+        if (!method) {
+            return methods.valid.call(this);
+        }
 
+        if (methods[method]) {
+            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+        }
 
-        return this;
+        if (typeof method == "object") {
+            return methods.init.call(this, method);
+        }
+
+        $.error('Method ' + method + ' does not exist on jQuery.xValidator');
     };
 })(jQuery);
