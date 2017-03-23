@@ -4,11 +4,15 @@
 <head>
     <title>xValidation Demo</title>
     <script src="jquery-3.2.0.min.js"></script>
-    <script src="xvalidation.js"></script>
+    <script type="text/javascript" src="xvalidation.js"></script>
     <style>
         span.title {
             display: inline-block;
             width: 100px;
+        }
+        
+        [data-xvalidator-msg-for] {
+            color: red;
         }
     </style>
 </head>
@@ -43,6 +47,7 @@
             <span class="title">sex:</span>
             <label for=""> <input type="radio" name="person[sex]" value="0">female</label>
             <label for=""> <input type="radio" name="person[sex]" value="1">male</label>
+            <span id="sex_msg">sex msg</span>
         </p>
         <p>
             <span class="title">city:</span>
@@ -75,10 +80,16 @@
             <input type="checkbox" name="hobby" value="hiking">hiking
             <input type="checkbox" name="hobby" value="riding">riding
         </p>
+        <p>
+            <button type="button" id="btn1">test</button>
+        </p>
     </div>
 
     <script>
-
+        $("#btn1").click(function () {
+            var result = $("#box1").validator();
+            console.log("result: " + result);
+        });
     </script>
 </body>
 
