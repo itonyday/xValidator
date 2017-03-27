@@ -73,7 +73,7 @@
  */
 (function ($) {
     function notInputed(value) {
-        if (typeof value == "number" && value === 0) {
+        if (value === null || value === undefined) {
             return true;
         }
 
@@ -81,7 +81,7 @@
             return true;
         }
 
-        return (value === null || value === undefined || value.length === 0);
+        return (value.toString().length === 0);
     }
 
     var RULES = {
@@ -241,58 +241,84 @@
     }
 
     /**
-     * 查找节点
+     * 找查HTML节点元素，并填充到规则对象
      * @param {jQuery Object} form 容器 
      * @param {String} name HTML节点名称
      * @param {Boolean} trim 是否去除文本内容的首尾空格
      * @return {Object} 返回节点信息（HTML元素，表单元素类型，输入的内容）
      */
-    function findNode($form, name, trim) {
+    function fillNode($form, name, ruleOption) {
         var $nodes = $form.find("[name='" + name + "']");
         if ($nodes.length == 0) {
-            return null;
+            throw new Error("cannot find html element with name of '" + name + "'.");
         }
 
-        var element = {
-            $node: $nodes,
-            trim: trim,
-            get value() {
-                return fnGetValue.call(this);
-            },
-            set value(v) { throw new Error("setter is disabled.") }
-        };
+        var fieldType;
         var tagName = $nodes.get(0).tagName;
         var inputType = $nodes.attr("type") ? $nodes.attr("type").toLowerCase() : null;
 
         // text, textarea
         if (isTextInput(tagName, inputType) || tagName === "TEXTAREA") {
-            element.fieldType = "text";
+            fieldType = "text";
         }
         // select
         else if (tagName === "SELECT" && !$nodes.prop("multiple")) {
-            element.fieldType = "drop-down-list";
+            fieldType = "drop-down-list";
         }
         // multiple list
         else if (tagName === "SELECT" && $nodes.prop("multiple")) {
-            element.fieldType = "multiple-options";
+            fieldType = "multiple-options";
         }
         // checkbox group
         else if (tagName === "INPUT" && inputType === "radio") {
-            element.fieldType = "radio";
+            fieldType = "radio";
         }
         // radio button group
         else if (tagName === "INPUT" && inputType === "checkbox") {
-            element.fieldType = "check";
+            fieldType = "check";
         }
         // oops
         else {
             throw new Error("unknown html element '" + tagName + "'");
         }
 
-        return element;
+        //         ruleOption.testabc = "abc";
+        //         Object.defineProperty(ruleOption, "testpp", {
+        //     //         value: "pp...",    enumerable: false,
+        //     //   writable: false,
+        //     //   configurable: false
+        //             get: function () {
+        //                 return "get test pp";
+        //             },
+        //             set:function(v){
+        //                 this.value = v;
+        //             },
+        //             enumerable:true
+        //            // writable:true
+        //         });
+        //         console.log(ruleOption.testpp);
+
+        // ruleOption.$node = $nodes;
+        //ruleOption.value
+        Object.defineProperties(ruleOption, {
+            "$node": {
+                value: $nodes,
+                enumerable: true
+            },
+            "value": {
+                get: function () {
+                    return fnGetValue.call(this);
+                },
+                enumerable: true
+            },
+            "fieldType": {
+                value: fieldType,
+                enumerable: true
+            }
+        });
     }
 
-    function createMsgElement($node, name) {
+    function createMsgElement(name, $node) {
         var $msg = $("<label data-xValidator-msg-for='" + name + "' style='display:none;'>DEBUG</label>");
         $msg.click(function () {
             $node.focus();
@@ -307,141 +333,154 @@
         return $msg;
     }
 
-    function setMsgElement(formElement, name, ruleOption) {
-        if (ruleOption.msgElement) {
-            formElement.msgElement = ruleOption.msgElement;
-        } else {
-            var $msg = $("[data-xValidator-msg-for='" + name + "']");
-            if ($msg.length === 0) {
-                $msg = createMsgElement(formElement.$node, name);
-            }
-
-            formElement.msgElement = $msg;
+    function setMsgElement(name, fieldRule) {
+        if (fieldRule.msgElement) {
+            return;
         }
+
+        // TODO 当页面分多个表单校验组，使用一样的name时，消息元素有可能重复。
+        var $msg = $("[data-xValidator-msg-for='" + name + "']");
+        if (!$msg.length) {
+            $msg = createMsgElement(name, fieldRule.$node);
+        }
+
+        fieldRule.msgElement = $msg;
     }
 
-    function setValidation(formElement) {
-        formElement.valid = function () {
-            if (formElement.required &&
-                formElement.required.value &&
-                !RULES.required.test.call(formElement.value)) {
-                formElement.sysMsg = RULES.required.msg;
+    function setValidation(fieldRule) {
+        fieldRule.valid = function () {
+            if (fieldRule.required &&
+                fieldRule.required.value &&
+                !RULES.required.test.call(fieldRule.value)) {
                 return false;
             }
 
-            for (var key in formElement) {
+            for (var key in fieldRule) {
                 var presetRule = RULES[key];
-                if (!presetRule) {
+                if (!presetRule || key === "required") {
                     continue;
                 }
 
-                var rule = formElement[key];
-                var passed = presetRule.test.call(formElement.value, rule.value);
+                var ruleItem = fieldRule[key];
+                var passed = presetRule.test.call(fieldRule.value, ruleItem.value);
 
                 if (!passed) {
-                    formElement.sysMsg = presetRule.msg;
                     return false;
                 }
             } // end for
 
             return true;
         } // end valid
-
     }
 
     function constructRules($form, options) {
         var rules = [];
-
         for (var name in options) {
             var item = options[name];
-            var element = findNode($form, name, item.trim);
+            fillNode($form, name, item);
 
-            if (!element) {
-                throw new Error("cannot find html element with name of '" + name + "'.");
-            }
+            setMsgElement(name, item);
+            setValidation(item);
+            item.name = name;
 
-            element.name = name;
-            setMsgElement(element, name, item);
-            setValidation(element);
-            var rule = $.extend(element, item);
-
-            console.log(rule);
-
-            rules.push(rule);
+            rules.push(item);
         }
 
+        console.log("rules:");
+        console.log(options);
         return rules;
     }
 
-    /**
-     * 有效的校验规则名称
-     */
-    var RULE_KEYS = ",required,number,email,max,min,max_out,min_out,maxlength,minlength,regex,custom,";
-    /**
-     * 有效的规则选项
-     */
+    // /**
+    //  * 有效的校验规则名称
+    //  */
+    // var RULE_KEYS = ",required,number,email,max,min,max_out,min_out,maxlength,minlength,regex,custom,";
+    // /**
+    //  * 有效的规则选项
+    //  */
+
+
+    // function validateRuleOption(option) {
+    //     for (var key in option) {
+    //         var ruleMatched = RULE_KEYS.indexOf("," + key + ",") === -1;
+    //         var optionMatched = OPTION_KEYS.indexOf("," + key + ",") === -1;
+
+    //         if (!ruleMatched && !optionMatched) {
+    //             throw new Error("invalid rule option/rule: " + key);
+    //         }
+    //     }
+    // }
+
     var OPTION_KEYS = ",trim,msg,msgElement,";
-
-    function validateRuleOption(option) {
-        for (var key in option) {
-            var ruleMatched = RULE_KEYS.indexOf("," + key + ",") === -1;
-            var optionMatched = OPTION_KEYS.indexOf("," + key + ",") === -1;
-
-            if (!ruleMatched && !optionMatched) {
-                throw new Error("invalid rule option/rule: " + key);
-            }
-        }
-    }
-
-    function fixRuleOption(rule) {
-        for (var key in rule) {
-            if (RULE_KEYS.indexOf("," + key + ",") === -1) {
-                continue;
-            }
-
-            var ruleItem = rule[key];
-
-            if (typeof ruleItem === "number" ||
-                typeof ruleItem === "boolean" ||
-                ruleItem instanceof RegExp
-            ) {
-                rule[key] = {
-                    value: ruleItem
-                };
-            }
-        }
+    function isValidOptionKey(optionKey) {
+        return OPTION_KEYS.indexOf("," + optionKey + ",") != -1;
     }
 
     /**
-     * 修整原始规则需求，返回完整的规则对象数组
-     * @param {Object} rawOptions 
+     * 修整单个字段的原始规则需求，返回完整的规则对象
+     * @param {Object} rawOption 单个字段的规则需求
      */
-    function fixRawRequires(rawOptions) {
-        var options = {};
+    function convertRawOption(rawOption) {
+        var fullOpt = {};
 
-        for (var key in rawOptions) {
+        for (var key in rawOption) {
+            var validOption = isValidOptionKey(key);
+            var innerRule = RULES[key];
+
+            if (!innerRule && !validOption) {
+                throw new Error("invalid key of rule requirement: " + key);
+            }
+
+            var rawValue = rawOption[key];
+
+            if (typeof rawValue === "number" ||
+                typeof rawValue === "boolean" ||
+                rawValue instanceof RegExp
+            ) {
+                fullOpt[key] = {
+                    value: rawValue,
+                    trim: true,
+                    msg: innerRule.msg
+                };
+            } else {
+                fullOpt[key] = $.extend({
+                    trim: true,
+                    msg: innerRule.msg
+                }, rawValue);
+            }
+        } // end for
+
+        return fullOpt;
+    }
+
+    /**
+     * 修整原始规则需求，返回完整的规则对象
+     * @param {Object} rawOptions 整个表单的原始规则需求
+     */
+    function convertRawRuleOption2Full(rawOptions) {
+        var fullOptions = {};
+
+        for (var name in rawOptions) {
             var newItem = null;
-            var rawOption = rawOptions[key];
+            var rawOption = rawOptions[name];
 
             if (rawOption === "required") {
                 newItem = {
-                    required: true,
+                    required: {
+                        value: true,
+                        msg: RULES.required.msg
+                    },
                     trim: true
                 };
-            }
-            else {
-                newItem = $.extend({
-                    trim: true
-                }, rawOption);
+            } else {
+                newItem = convertRawOption(rawOption);
             }
 
-            console.log(newItem);
-            validateRuleOption(newItem);
-            fixRuleOption(newItem);
-            options[key] = newItem;
+            fullOptions[name] = newItem;
         }
 
-        return options;
+        console.log(fullOptions);
+        return fullOptions;
     }
 
     function showMsg(rule, passed) {
@@ -450,31 +489,28 @@
             return;
         }
 
-        if (rule.msg) {
-            rule.msgElement.html(rule.msg);
-        } else {
-            rule.msgElement.html(rule.sysMsg);
-        }
-
-        rule.msgElement.show();
+        rule.msgElement.html(rule.msg).show();
     }
 
     var methods = {
         init: function (options) {
             console.log("init");
 
-            var rules = constructRules(this, fixRawRequires(options));
+            var fullOptions = convertRawRuleOption2Full(options);
+            var rules = constructRules(this, fullOptions);
+
+
             this.data("xValidator", rules);
-            return rules;
+            return this;
         },
-        setData: function () {
-            this.data("xValidator", { name: "tonyday" });
-        },
+        // setData: function () {
+        //     this.data("xValidator", { name: "tonyday" });
+        // },
         valid: function () {
             console.log("valid");
             var rules = this.data("xValidator");
             if (!rules || !rules.length) {
-                console.log("there's not validation rules.");
+                console.log("there's no validation rules.");
                 return true;
             }
 
