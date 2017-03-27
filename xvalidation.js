@@ -352,7 +352,10 @@
             if (fieldRule.required &&
                 fieldRule.required.value &&
                 !RULES.required.test.call(fieldRule.value)) {
-                return false;
+                return {
+                    passed: false,
+                    msg: fieldRule.required.msg
+                };
             }
 
             for (var key in fieldRule) {
@@ -365,11 +368,16 @@
                 var passed = presetRule.test.call(fieldRule.value, ruleItem.value);
 
                 if (!passed) {
-                    return false;
+                    return {
+                        passed: false,
+                        msg: ruleItem.msg.replace("$value", ruleItem.value)
+                    };
                 }
             } // end for
 
-            return true;
+            return {
+                passed: true,
+            };
         } // end valid
     }
 
@@ -433,6 +441,8 @@
 
             var rawValue = rawOption[key];
 
+            console.log(key);
+
             if (typeof rawValue === "number" ||
                 typeof rawValue === "boolean" ||
                 rawValue instanceof RegExp
@@ -472,6 +482,14 @@
                     },
                     trim: true
                 };
+            } else if (rawOption instanceof RegExp) {
+                newItem = {
+                    regex: {
+                        value: rawOption,
+                        msg: RULES.regex.msg
+                    },
+                    trim: true
+                };
             } else {
                 newItem = convertRawOption(rawOption);
             }
@@ -483,13 +501,13 @@
         return fullOptions;
     }
 
-    function showMsg(rule, passed) {
-        if (passed) {
+    function showMsg(rule, validationInfo) {
+        if (validationInfo.passed) {
             rule.msgElement.hide();
             return;
         }
 
-        rule.msgElement.html(rule.msg).show();
+        rule.msgElement.html(validationInfo.msg).show();
     }
 
     var methods = {
@@ -508,18 +526,27 @@
         // },
         valid: function () {
             console.log("valid");
+            var result = true;
+
             var rules = this.data("xValidator");
             if (!rules || !rules.length) {
                 console.log("there's no validation rules.");
-                return true;
+                return result;
             }
 
             for (var i = 0; i < rules.length; ++i) {
                 var rule = rules[i];
-                var passed = rule.valid();
-                console.log(rule.name + ": " + passed);
-                showMsg(rule, passed);
-            }
+                var vInfo = rule.valid();
+                console.log(rule.name + ": " + vInfo.passed);
+                showMsg(rule, vInfo);
+
+
+                if (!vInfo.passed) {
+                    result = false;
+                }
+            } // end for
+
+            return result;
         }
     };
 
