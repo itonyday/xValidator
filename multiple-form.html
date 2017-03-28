@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>xValidation Demo - 多表单</title>
+    <script src="jquery-3.2.0.min.js"></script>
+    <script type="text/javascript" src="xvalidation.js"></script>
+    <style>
+        span.title {
+            display: inline-block;
+            width: 100px;
+        }
+        
+        [data-xvalidator-msg-for] {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="box1" style="float:left;">
+        <h2>- form 1 -</h2>
+        <p>
+            <span class="title">name:</span> <input type="text" name="name">
+        </p>
+        <p>
+            <span class="title">age:</span> <input type="text" name="age">
+        </p>
+        <p>
+            <span class="title">password:</span> <input type="password" name="password">
+        </p>
+        <p>
+            <button type="button" id="btn1">test</button>
+            <button type="button" id="btn2">add validation</button>
+        </p>
+        <p id="result1">test result: <span>?</span></p>
+    </div>
+
+    <div id="box2" style="float:left; margin-left: 50px;">
+        <h2>- form 2 -</h2>
+        <p>
+            <span class="title">sex:</span>
+            <label for=""> <input type="radio" name="person[sex]" value="0">female</label>
+            <label for=""> <input type="radio" name="person[sex]" value="1">male</label>
+            <span id="sex_msg">sex msg</span>
+        </p>
+        <p>
+            <span class="title">city:</span>
+            <select name="city" id="">
+                <option value="">select...</option>
+                <option value="guangzhou">guangzhou</option>
+                <option value="shenzhen">shenzhen</option>
+                <option value="shanghai">shanghai</option>
+            </select>
+        </p>
+        <p><span class="title">tickets:</span>
+            <select name="tickets" id="" multiple>
+                <option value="trip-usa">trip to usa</option>
+                <option value="trip-russia">trip to russia</option>
+                <option value="trip-south-africa">trip to south africa</option>
+            </select>
+        </p>
+        <p>
+            <span class="title">certification:</span>
+            <input type="checkbox" name="certification" value="GAT">GAT
+            <input type="checkbox" name="certification" value="TUS">TUS
+            <input type="checkbox" name="certification" value="ABC">ABC
+            <input type="checkbox" name="certification" value="DAA">DAA
+        </p>
+        <p>
+            <span class="title">hobby:</span>
+            <input type="checkbox" name="hobby" value="football">football
+            <input type="checkbox" name="hobby" value="basketball">basketball
+            <input type="checkbox" name="hobby" value="swim">swim
+            <input type="checkbox" name="hobby" value="hiking">hiking
+            <input type="checkbox" name="hobby" value="riding">riding
+            <span id="hobby-v-msg" style="display: none; color:yellow;"></span>
+        </p>
+        <p>
+            <button type="button" id="btn3">test</button>
+            <button type="button" id="btn4">add validation</button>
+        </p>
+        <p id="result2">test result: <span>?</span></p>
+    </div>
+    <script>
+        $("#btn1").click(function () {
+            var result = $("#box1").validator();
+            
+            
+            if(result){
+                $("#result1 span").html("success").css("color", "green");
+            }else{
+                $("#result1 span").html("failed").css("color", "red");
+            }
+        });
+
+        $("#btn2").click(function () {
+            $("#box1").validator({
+                name: {
+                    required: {
+                        value: true,
+                        msg: "name is requried."
+                    }
+                    , minlength: 2
+                    , maxlength: {
+                        value: 4,
+                        msg: "最多4个字符。"
+                    }
+                    , msg: "name is required, at least 2 chars."
+                    //msg:"name required."
+                }
+                , password: {
+                    required: true,
+                    trim: false
+                }
+                , "age": {
+                    required: {
+                        value: true,
+                        msg: "填报年龄审核。"
+                    },
+                    max: 60,
+                    min: {
+                        value: 18,
+                        msg: "未成年人不得参加。"
+                    },
+                    msg: "18-60岁才能参加。"
+                }
+            });
+        });
+
+
+        $("#btn3").click(function () {
+            var result = $("#box2").validator();
+
+            if(result){
+                $("#result2 span").html("success").css("color", "green");
+            }else{
+                $("#result2 span").html("failed").css("color", "red");
+            }
+        });
+
+
+        $("#btn4").click(function () {
+            $("#box2").validator({
+                "person[sex]": {
+                    required: true,
+                    msgElement: $("#sex_msg")
+                }
+                //                , city: "required"
+                , tickets: {
+                    required: {
+                        value: true,
+                        msg: "请选择车票"
+                    }
+                }
+                , certification: "required"
+                , "hobby": {
+                    required: true,
+                    msgElement: $("#hobby-v-msg")
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -331,6 +331,10 @@
 
     function setValidation(fieldRule) {
         fieldRule.valid = function () {
+            if (fieldRule.custom) {
+                return fieldRule.custom(fieldRule.value);
+            }
+
             if (fieldRule.required &&
                 fieldRule.required.value &&
                 !RULES.required.test.call(fieldRule.value)) {
@@ -369,7 +373,11 @@
             var item = options[name];
             fillNode($form, name, item);
 
-            setMsgElement(name, item);
+            // 自定义校验规则不作消息显示的元素，由自定义规则里处理
+            if (!item.custom) {
+                setMsgElement(name, item);
+            }
+
             setValidation(item);
             item.name = name;
 
@@ -394,6 +402,11 @@
         for (var key in rawOption) {
             if (key === "msgElement") {
                 fullOpt.msgElement = rawOption[key];
+                continue;
+            }
+
+            if (key === "custom") {
+                fullOpt.custom = rawOption[key];
                 continue;
             }
 
@@ -442,10 +455,20 @@
      * @param {Object} rawOptions 整个表单的原始规则需求
      */
     function convertRawRuleOption2Full(rawOptions) {
+        // if (rawOptions instanceof Function) {
+        //     return rawOptions;
+        // }
+
         var fullOptions = {};
 
         for (var name in rawOptions) {
             var rawOption = rawOptions[name];
+
+            // // custom
+            // if (rawOption instanceof Function) {
+            //     fullOptions[name] = rawOption;
+            //     continue;
+            // }
 
             if (rawOption === "required") {
                 rawOption = {
@@ -459,6 +482,10 @@
                 var presetRegexName = rawOption;
                 rawOption = {};
                 rawOption[presetRegexName] = true;
+            } else if (rawOption instanceof Function) {
+                rawOption = {
+                    custom: rawOption
+                };
             }
 
             fullOptions[name] = convertRawOption(rawOption);
@@ -468,6 +495,10 @@
     }
 
     function showMsg(rule, validationInfo) {
+        if (rule.custom) {
+            return;
+        }
+
         if (validationInfo.passed) {
             rule.msgElement.hide();
             return;
@@ -481,6 +512,7 @@
             var fullOptions = convertRawRuleOption2Full(options);
             var rules = constructRules(this, fullOptions);
 
+            console.log(rules);
 
             this.data("xValidator", rules);
             return this;
@@ -497,10 +529,17 @@
             for (var i = 0; i < rules.length; ++i) {
                 var rule = rules[i];
                 var vInfo = rule.valid();
-                showMsg(rule, vInfo);
 
-                if (!vInfo.passed) {
-                    result = false;
+                if (rule.custom) {
+                    if (!vInfo) {
+                        result = false;
+                    }
+                } else {
+                    showMsg(rule, vInfo);
+
+                    if (!vInfo.passed) {
+                        result = false;
+                    }
                 }
             } // end for
 

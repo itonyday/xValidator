@@ -32,6 +32,7 @@
         </p>
         <p>
             <span class="title">content:</span> <textarea name="content" id="" cols="30" rows="5"></textarea>
+            <p style="display: none" id="content-v-msg"></p>
         </p>
 
         <p>
@@ -176,12 +177,12 @@
                         value: true,
                         msg: "name is requried."
                     }
-                    , minlength: 2
-                    , maxlength: {
-                        value: 4,
-                        msg: "最多4个字符。"
-                    }
-                    , msg: "name is required, at least 2 chars."
+                    // , minlength: 2
+                    // , maxlength: {
+                    //     value: 4,
+                    //     msg: "最多4个字符。"
+                    // }
+                    // , msg: "name is required, at least 2 chars."
                     //msg:"name required."
                 }
                 // , faxNo:{
@@ -211,18 +212,27 @@
                 //     email:true
                 //     , msg:"please input a valid email address."
                 // }
-                , phoneNo: "number"
-                , "age": {
-                    required: {
-                        value: true,
-                        msg: "填报年龄审核。"
-                    },
-                    max: 60,
-                    min: {
-                        value: 18,
-                        msg: "未成年人不得参加。"
-                    },
-                    msg: "18-60岁才能参加。"
+                // , phoneNo: "number"
+                // , "age": {
+                //     required: {
+                //         value: true,
+                //         msg: "填报年龄审核。"
+                //     },
+                //     max: 60,
+                //     min: {
+                //         value: 18,
+                //         msg: "未成年人不得参加。"
+                //     },
+                //     msg: "18-60岁才能参加。"
+                // }
+                , content: function ($value) {
+                    if ($value.indexOf("grape") != -1) {
+                        $("#content-v-msg").hide();
+                        return true;
+                    }
+
+                    $("#content-v-msg").show().html("内容要包括 grape 单词。");
+                    return false;
                 }
             });
         });
