@@ -183,7 +183,7 @@
                     return true;
                 }
 
-                return this.length < $value;
+                return this.length <= $value;
             }
         },
 
@@ -194,7 +194,7 @@
                     return true;
                 }
 
-                return this.length > $value;
+                return this.length >= $value;
             }
         },
 
@@ -227,7 +227,7 @@
                 return this.$node.val();
 
             default:
-                return this.$node.filter(":checked").length;
+                return this.$node.filter(":checked").val();
         }
     }
 
@@ -282,24 +282,6 @@
             throw new Error("unknown html element '" + tagName + "'");
         }
 
-        //         ruleOption.testabc = "abc";
-        //         Object.defineProperty(ruleOption, "testpp", {
-        //     //         value: "pp...",    enumerable: false,
-        //     //   writable: false,
-        //     //   configurable: false
-        //             get: function () {
-        //                 return "get test pp";
-        //             },
-        //             set:function(v){
-        //                 this.value = v;
-        //             },
-        //             enumerable:true
-        //            // writable:true
-        //         });
-        //         console.log(ruleOption.testpp);
-
-        // ruleOption.$node = $nodes;
-        //ruleOption.value
         Object.defineProperties(ruleOption, {
             "$node": {
                 value: $nodes,
@@ -394,30 +376,8 @@
             rules.push(item);
         }
 
-        console.log("rules:");
-        console.log(options);
         return rules;
     }
-
-    // /**
-    //  * 有效的校验规则名称
-    //  */
-    // var RULE_KEYS = ",required,number,email,max,min,max_out,min_out,maxlength,minlength,regex,custom,";
-    // /**
-    //  * 有效的规则选项
-    //  */
-
-
-    // function validateRuleOption(option) {
-    //     for (var key in option) {
-    //         var ruleMatched = RULE_KEYS.indexOf("," + key + ",") === -1;
-    //         var optionMatched = OPTION_KEYS.indexOf("," + key + ",") === -1;
-
-    //         if (!ruleMatched && !optionMatched) {
-    //             throw new Error("invalid rule option/rule: " + key);
-    //         }
-    //     }
-    // }
 
     var OPTION_KEYS = ",trim,msg,msgElement,";
     function isValidOptionKey(optionKey) {
@@ -432,16 +392,22 @@
         var fullOpt = {};
 
         for (var key in rawOption) {
-            var validOption = isValidOptionKey(key);
-            var innerRule = RULES[key];
+            if (key === "msgElement") {
+                fullOpt.msgElement = rawOption[key];
+                continue;
+            }
 
-            if (!innerRule && !validOption) {
+            var validOption = isValidOptionKey(key);
+            if (validOption) {
+                continue;
+            }
+
+            var innerRule = RULES[key];
+            if (!innerRule) {
                 throw new Error("invalid key of rule requirement: " + key);
             }
 
             var rawValue = rawOption[key];
-
-            console.log(key);
 
             if (typeof rawValue === "number" ||
                 typeof rawValue === "boolean" ||
@@ -450,17 +416,25 @@
                 fullOpt[key] = {
                     value: rawValue,
                     trim: true,
-                    msg: innerRule.msg
+                    msg: rawOption.msg || innerRule.msg
                 };
             } else {
                 fullOpt[key] = $.extend({
                     trim: true,
-                    msg: innerRule.msg
+                    msg: rawOption.msg || innerRule.msg
                 }, rawValue);
             }
         } // end for
 
         return fullOpt;
+    }
+
+    function isPresetRegexRule(optionName) {
+        if (!optionName instanceof String) {
+            return false;
+        }
+
+        return RULES[optionName] != null;
     }
 
     /**
@@ -471,33 +445,25 @@
         var fullOptions = {};
 
         for (var name in rawOptions) {
-            var newItem = null;
             var rawOption = rawOptions[name];
 
             if (rawOption === "required") {
-                newItem = {
-                    required: {
-                        value: true,
-                        msg: RULES.required.msg
-                    },
-                    trim: true
+                rawOption = {
+                    required: true
                 };
             } else if (rawOption instanceof RegExp) {
-                newItem = {
-                    regex: {
-                        value: rawOption,
-                        msg: RULES.regex.msg
-                    },
-                    trim: true
+                rawOption = {
+                    regex: rawOption
                 };
-            } else {
-                newItem = convertRawOption(rawOption);
+            } else if (isPresetRegexRule(rawOption)) {
+                var presetRegexName = rawOption;
+                rawOption = {};
+                rawOption[presetRegexName] = true;
             }
 
-            fullOptions[name] = newItem;
-        }
+            fullOptions[name] = convertRawOption(rawOption);
+        } // end for
 
-        console.log(fullOptions);
         return fullOptions;
     }
 
@@ -512,8 +478,6 @@
 
     var methods = {
         init: function (options) {
-            console.log("init");
-
             var fullOptions = convertRawRuleOption2Full(options);
             var rules = constructRules(this, fullOptions);
 
@@ -521,11 +485,7 @@
             this.data("xValidator", rules);
             return this;
         },
-        // setData: function () {
-        //     this.data("xValidator", { name: "tonyday" });
-        // },
         valid: function () {
-            console.log("valid");
             var result = true;
 
             var rules = this.data("xValidator");
@@ -537,9 +497,7 @@
             for (var i = 0; i < rules.length; ++i) {
                 var rule = rules[i];
                 var vInfo = rule.valid();
-                console.log(rule.name + ": " + vInfo.passed);
                 showMsg(rule, vInfo);
-
 
                 if (!vInfo.passed) {
                     result = false;
